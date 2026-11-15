@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Cancel Ticket — RailSmart{% endblock %}
+{% block page_title %}Cancel Ticket{% endblock %}
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  🔍 SEARCH FORM                                                 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-head">
+    <h3><i class="fa-solid fa-ban"></i> Cancel Ticket by PNR</h3>
+  </div>
+
+  <form method="POST" class="inline-form">
+    <input
+      type="text"
+      name="pnr"
+      placeholder="Enter 10-digit PNR (e.g., 1234567890)"
+      maxlength="10"
+      pattern="\d{10}"
+      inputmode="numeric"
+      required
+    />
+    <button type="submit" class="btn btn-danger">
+      <i class="fa-solid fa-magnifying-glass"></i> Search
+    </button>
+  </form>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  📋 BOOKING DETAILS + REFUND PREVIEW                            -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+{% if booking and booking.status == 'CONFIRMED' %}
+<div class="card">
+  <div class="card-head">
+    <h3><i class="fa-solid fa-circle-info"></i> Booking Details</h3>
+    <span class="badge badge-success">{{ booking.status }}</span>
+  </div>
+
+  <div class="pnr-result">
+    <div class="pnr-header">
+      <h4>PNR: <code>{{ booking.pnr }}</code></h4>
+      <span class="badge badge-success">CONFIRMED</span>
+    </div>
+
+    <div class="pnr-grid">
+      <div><label>Train</label><p>{{ booking.train.train_name }} ({{ booking.train.train_number }})</p></div>
+      <div><label>Route</label><p>{{ booking.train.source }} → {{ booking.train.destination }}</p></div>
+      <div><label>Departure</label><p>{{ booking.train.departure_time }}</p></div>
+      <div><label>Arrival</label><p>{{ booking.train.arrival_time }}</p></div>
+      <div><label>Passenger</label><p>{{ booking.passenger_name }} ({{ booking.passenger_age }} yrs, {{ booking.passenger_gender }})</p></div>
+      <div><label>Seats</label><p>{{ booking.seats_booked }}</p></div>
+      <div><label>Total Fare</label><p><strong>₹{{ booking.total_fare }}</strong></p></div>
+      <div><label>Booked On</label><p>{{ booking.booking_date.strftime('%d %b %Y, %I:%M %p') }}</p></div>
+    </div>
+
+    <!-- Refund Summary Box -->
+    {% if refund_info %}
+    <div class="refund-box">
+      <h4><i class="fa-solid fa-money-bill-wave"></i> Refund Summary</h4>
+      <div class="refund-row">
+        <span>Total Paid</span>
+        <span>₹{{ refund_info.total }}</span>
+      </div>
+      <div class="refund-row">
+        <span>Cancellation Charge (20%)</span>
+        <span style="color:#ef4444;">− ₹{{ refund_info.charge }}</span>
+      </div>
+      <div class="refund-row refund-total">
+        <span>Refund Amount (80%)</span>
+        <span>₹{{ refund_info.refund }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Confirm Cancel Button -->
+    <form
+      method="POST"
+      action="{{ url_for('main.cancel_ticket', booking_id=booking.id) }}"
+      onsubmit="return confirm('Are you sure you want to cancel PNR {{ booking.pnr }}?\n\nRefund: ₹{{ refund_info.refund if refund_info else (booking.total_fare * 0.8)|round(2) }}\n\nThis action cannot be undone.');"
+      style="margin-top: 20px;"
+    >
+      <button type="submit" class="btn btn-danger btn-lg">
+        <i class="fa-solid fa-xmark"></i> Confirm Cancellation
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  🎨 STYLES                                                       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<style>
+  .refund-box {
+    margin-top: 20px;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .refund-box h4 {
+    margin-bottom: 12px;
+    color: #92400e;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+  }
+  .refund-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #78350f;
+  }
+  .refund-total {
+    border-top: 1px solid #fcd34d;
+    margin-top: 8px;
+    padding-top: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #065f46;
+  }
+</style>
+
+{% endblock %}

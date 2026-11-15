@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block title %}Reports — RailSmart{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  📊 KPI STAT CARDS                                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="stats-grid">
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <div>
+      <div class="stat-value">{{ summary.confirmed_count }}</div>
+      <div class="stat-label">Confirmed Bookings</div>
+    </div>
+  </div>
+  <div class="stat-card stat-orange">
+    <div class="stat-icon"><i class="fa-solid fa-ban"></i></div>
+    <div>
+      <div class="stat-value">{{ summary.cancelled_count }}</div>
+      <div class="stat-label">Cancelled Bookings</div>
+    </div>
+  </div>
+  <div class="stat-card stat-blue">
+    <div class="stat-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+    <div>
+      <div class="stat-value">₹{{ summary.total_revenue }}</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+  </div>
+  <div class="stat-card stat-purple">
+    <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+    <div>
+      <div class="stat-value">₹{{ summary.net_revenue }}</div>
+      <div class="stat-label">Net Revenue</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  📈 CHARTS — Two-column layout                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="two-col">
+
+  <!-- Bar Chart — Revenue by Train -->
+  <div class="card">
+    <div class="card-head">
+      <h3><i class="fa-solid fa-chart-bar"></i> Revenue by Train</h3>
+    </div>
+    <div style="padding: 20px;">
+      {% if revenue_by_train %}
+      <canvas id="revenueChart" style="max-height: 320px;"></canvas>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-chart-simple"></i>
+        <p>No revenue data yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Doughnut Chart — Booking Status -->
+  <div class="card">
+    <div class="card-head">
+      <h3><i class="fa-solid fa-chart-pie"></i> Booking Status</h3>
+    </div>
+    <div style="padding: 20px;">
+      <canvas id="statusChart" style="max-height: 320px;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  📋 DETAILED TABLE                                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-head">
+    <h3><i class="fa-solid fa-table-list"></i> Train-wise Breakdown</h3>
+  </div>
+  {% if revenue_by_train %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Train</th>
+          <th>Total Bookings</th>
+          <th>Total Revenue</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for name, revenue, count in revenue_by_train %}
+        <tr>
+          <td>{{ name }}</td>
+          <td>{{ count }}</td>
+          <td>₹{{ '%.2f'|format(revenue or 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-chart-simple"></i>
+    <p>No data available.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  📊 Chart.js Library                                            -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+  // ──────────────────────────────────────────────────────
+  //  Data from Flask (Jinja → JavaScript)
+  // ──────────────────────────────────────────────────────
+  const trainNames = [
+    {% for name, revenue, count in revenue_by_train %}
+      "{{ name }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const trainRevenues = [
+    {% for name, revenue, count in revenue_by_train %}
+      {{ revenue or 0 }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const trainBookings = [
+    {% for name, revenue, count in revenue_by_train %}
+      {{ count }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const confirmedCount = {{ summary.confirmed_count }};
+  const cancelledCount = {{ summary.cancelled_count }};
+
+  // ──────────────────────────────────────────────────────
+  //  Chart 1: BAR — Revenue by Train
+  // ──────────────────────────────────────────────────────
+  const revenueCanvas = document.getElementById('revenueChart');
+  if (revenueCanvas && trainNames.length > 0) {
+    new Chart(revenueCanvas, {
+      type: 'bar',
+      data: {
+        labels: trainNames,
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: trainRevenues,
+          backgroundColor: [
+            'rgba(79, 70, 229, 0.8)',
+            'rgba(16, 185, 129, 0.8)',
+            'rgba(245, 158, 11, 0.8)',
+            'rgba(139, 92, 246, 0.8)',
+            'rgba(59, 130, 246, 0.8)',
+            'rgba(236, 72, 153, 0.8)',
+            'rgba(20, 184, 166, 0.8)',
+            'rgba(249, 115, 22, 0.8)',
+          ],
+          borderColor: [
+            'rgba(79, 70, 229, 1)',
+            'rgba(16, 185, 129, 1)',
+            'rgba(245, 158, 11, 1)',
+            'rgba(139, 92, 246, 1)',
+            'rgba(59, 130, 246, 1)',
+            'rgba(236, 72, 153, 1)',
+            'rgba(20, 184, 166, 1)',
+            'rgba(249, 115, 22, 1)',
+          ],
+          borderWidth: 2,
+          borderRadius: 8,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            titleFont: { size: 13, weight: 'bold' },
+            bodyFont: { size: 13 },
+            padding: 12,
+            cornerRadius: 8,
+            callbacks: {
+              label: function(context) {
+                return 'Revenue: ₹' + context.parsed.y.toLocaleString('en-IN');
+              },
+              afterLabel: function(context) {
+                return 'Bookings: ' + trainBookings[context.dataIndex];
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+              },
+              color: '#64748b',
+              font: { size: 12 }
+            },
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          },
+          x: {
+            ticks: {
+              color: '#64748b',
+              font: { size: 11 },
+              maxRotation: 45,
+              minRotation: 0
+            },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  // ──────────────────────────────────────────────────────
+  //  Chart 2: DOUGHNUT — Booking Status
+  // ──────────────────────────────────────────────────────
+  const statusCanvas = document.getElementById('statusChart');
+  if (statusCanvas) {
+    new Chart(statusCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Confirmed', 'Cancelled'],
+        datasets: [{
+          data: [confirmedCount, cancelledCount],
+          backgroundColor: [
+            'rgba(16, 185, 129, 0.9)',
+            'rgba(239, 68, 68, 0.9)'
+          ],
+          borderColor: '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              font: { size: 13, weight: '600' },
+              color: '#0f172a',
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 12,
+            cornerRadius: 8,
+            callbacks: {
+              label: function(context) {
+                const total = confirmedCount + cancelledCount;
+                const pct = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                return context.label + ': ' + context.parsed + ' (' + pct + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+</script>
+
+{% endblock %}

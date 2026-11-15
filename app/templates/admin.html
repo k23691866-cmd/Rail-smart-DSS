@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Admin — RailSmart{% endblock %}
+{% block page_title %}Admin Control Panel{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card stat-blue">
+    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+    <div><div class="stat-value">{{ stats.total_users }}</div><div class="stat-label">Users</div></div>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fa-solid fa-train"></i></div>
+    <div><div class="stat-value">{{ stats.total_trains }}</div><div class="stat-label">Trains</div></div>
+  </div>
+  <div class="stat-card stat-orange">
+    <div class="stat-icon"><i class="fa-solid fa-ticket"></i></div>
+    <div><div class="stat-value">{{ stats.total_bookings }}</div><div class="stat-label">Bookings</div></div>
+  </div>
+  <div class="stat-card stat-purple">
+    <div class="stat-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+    <div><div class="stat-value">₹{{ stats.total_revenue }}</div><div class="stat-label">Revenue</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h3><i class="fa-solid fa-plus"></i> Add Train</h3></div>
+  <form method="POST" action="{{ url_for('main.add_train') }}" class="grid-form">
+    <div class="form-group"><label>Train Number</label><input type="text" name="train_number" required maxlength="10" /></div>
+    <div class="form-group"><label>Train Name</label><input type="text" name="train_name" required /></div>
+    <div class="form-group">
+      <label>Source</label>
+      <select name="source" required>
+        <option value="">-- Select --</option>
+        <option value="Chennai">Chennai</option>
+        <option value="Mumbai">Mumbai</option>
+        <option value="Delhi">Delhi</option>
+        <option value="Kolkata">Kolkata</option>
+        <option value="Bangalore">Bangalore</option>
+        <option value="Hyderabad">Hyderabad</option>
+        <option value="Pune">Pune</option>
+        <option value="Ahmedabad">Ahmedabad</option>
+        <option value="Jaipur">Jaipur</option>
+        <option value="Lucknow">Lucknow</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Destination</label>
+      <select name="destination" required>
+        <option value="">-- Select --</option>
+        <option value="Chennai">Chennai</option>
+        <option value="Mumbai">Mumbai</option>
+        <option value="Delhi">Delhi</option>
+        <option value="Kolkata">Kolkata</option>
+        <option value="Bangalore">Bangalore</option>
+        <option value="Hyderabad">Hyderabad</option>
+        <option value="Pune">Pune</option>
+        <option value="Ahmedabad">Ahmedabad</option>
+        <option value="Jaipur">Jaipur</option>
+        <option value="Lucknow">Lucknow</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Departure</label><input type="time" name="departure_time" value="08:00" required /></div>
+    <div class="form-group"><label>Arrival</label><input type="time" name="arrival_time" value="14:00" required /></div>
+    <div class="form-group"><label>Total Seats</label><input type="number" name="total_seats" value="100" min="1" required /></div>
+    <div class="form-group"><label>Fare (₹)</label><input type="number" name="fare" step="0.01" min="0" required /></div>
+    <div class="form-actions span-2"><button class="btn btn-primary"><i class="fa-solid fa-save"></i> Add Train</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-head"><h3><i class="fa-solid fa-users-gear"></i> Users</h3></div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.username }}</td>
+          <td>{{ u.email }}</td>
+          <td><span class="badge badge-{{ 'danger' if u.role=='admin' else 'info' }}">{{ u.role }}</span></td>
+          <td>
+            <form method="POST" action="{{ url_for('main.toggle_user', user_id=u.id) }}" style="display:inline;">
+              <button class="btn btn-sm btn-outline">Toggle</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h3><i class="fa-solid fa-train-subway"></i> Trains</h3></div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Name</th><th>Route</th><th>Seats</th><th>Fare</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for t in trains %}
+        <tr>
+          <td><code>{{ t.train_number }}</code></td>
+          <td>{{ t.train_name }}</td>
+          <td>{{ t.source }} → {{ t.destination }}</td>
+          <td>{{ t.available_seats }}/{{ t.total_seats }}</td>
+          <td>₹{{ t.fare }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('main.delete_train', train_id=t.id) }}"
+                  onsubmit="return confirm('Delete?');" style="display:inline;">
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">No trains yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

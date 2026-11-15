@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — RailSmart{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card stat-blue">
+    <div class="stat-icon"><i class="fa-solid fa-ticket"></i></div>
+    <div><div class="stat-value">{{ stats.total_trips }}</div><div class="stat-label">Total Trips</div></div>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <div><div class="stat-value">{{ stats.active_trips }}</div><div class="stat-label">Active Bookings</div></div>
+  </div>
+  <div class="stat-card stat-orange">
+    <div class="stat-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+    <div><div class="stat-value">₹{{ stats.total_spent }}</div><div class="stat-label">Total Spent</div></div>
+  </div>
+  <div class="stat-card stat-purple">
+    <div class="stat-icon"><i class="fa-solid fa-train"></i></div>
+    <div><div class="stat-value">{{ stats.trains_available }}</div><div class="stat-label">Trains Available</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Bookings</h3>
+    <a href="{{ url_for('main.my_bookings') }}" class="link">View All →</a>
+  </div>
+  {% if recent %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>PNR</th><th>Train</th><th>Route</th><th>Seats</th><th>Fare</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for b in recent %}
+        <tr>
+          <td><code>{{ b.pnr }}</code></td>
+          <td>{{ b.train.train_name }}</td>
+          <td>{{ b.train.source }} → {{ b.train.destination }}</td>
+          <td>{{ b.seats_booked }}</td>
+          <td>₹{{ b.total_fare }}</td>
+          <td><span class="badge badge-{{ 'success' if b.status=='CONFIRMED' else 'danger' }}">{{ b.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-ticket-simple"></i>
+    <p>No bookings yet.</p>
+    <a href="{{ url_for('main.booking') }}" class="btn btn-primary">Book Your First Trip</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

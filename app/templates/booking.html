@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+{% block title %}Book Ticket — RailSmart{% endblock %}
+{% block page_title %}Book a Ticket{% endblock %}
+{% block content %}
+
+<style>
+  #route-map {
+    height: 450px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 40px rgba(79, 70, 229, 0.15) !important;
+    border: 2px solid #e0e7ff !important;
+  }
+
+  .route-stats-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+
+  .route-stats-pill i { font-size: 14px; }
+
+  .map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 2px dashed #e0e7ff;
+  }
+
+  .map-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e1b4b;
+    margin: 0;
+  }
+
+  .map-title i {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 22px;
+  }
+
+  /* Legend — Colors explain */
+  .map-legend {
+    display: flex;
+    gap: 20px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend-source { background: #4f46e5; box-shadow: 0 2px 6px rgba(79,70,229,.4); }
+  .legend-dest { background: #10b981; box-shadow: 0 2px 6px rgba(16,185,129,.4); }
+  .legend-route {
+    background: linear-gradient(90deg, #4f46e5, #10b981);
+    height: 4px;
+    width: 24px;
+    border-radius: 2px;
+  }
+
+  /* ===== SOURCE MARKER (BLUE) ===== */
+  .source-marker-icon {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    width: 54px;
+    height: 54px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 6px 24px rgba(79, 70, 229, 0.6);
+    animation: bounceSource 2s infinite;
+  }
+
+  .source-marker-icon > div {
+    transform: rotate(45deg);
+    font-size: 24px;
+  }
+
+  /* ===== DESTINATION MARKER (GREEN) ===== */
+  .dest-marker-icon {
+    background: linear-gradient(135deg, #10b981, #059669);
+    width: 54px;
+    height: 54px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.6);
+    animation: bounceDest 2s infinite;
+  }
+
+  .dest-marker-icon > div {
+    transform: rotate(45deg);
+    font-size: 24px;
+  }
+
+  /* Pulsing ring effect */
+  .pulse-ring-blue, .pulse-ring-green {
+    position: absolute;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes bounceSource {
+    0%, 100% { transform: rotate(-45deg) translateY(0); }
+    50% { transform: rotate(-45deg) translateY(-10px); }
+  }
+
+  @keyframes bounceDest {
+    0%, 100% { transform: rotate(-45deg) translateY(0); }
+    50% { transform: rotate(-45deg) translateY(-10px); }
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+    70% { box-shadow: 0 0 0 20px rgba(79, 70, 229, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+  }
+
+  /* Popup styling */
+  .leaflet-popup-content-wrapper {
+    border-radius: 14px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .leaflet-popup-content { margin: 0 !important; padding: 0 !important; }
+
+  .map-popup { font-family: 'Inter', sans-serif; min-width: 260px; }
+
+  .map-popup-header {
+    padding: 14px 18px;
+    font-weight: 800;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+  }
+
+  .popup-source { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+  .popup-dest { background: linear-gradient(135deg, #10b981, #059669); }
+
+  .map-popup-body { padding: 14px 18px; background: white; }
+
+  .map-popup-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    font-size: 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .map-popup-row:last-child { border-bottom: none; }
+  .map-popup-label { color: #64748b; font-weight: 600; }
+  .map-popup-value { color: #0f172a; font-weight: 700; }
+
+  /* Animated dashed line */
+  .leaflet-interactive {
+    animation: dashAnimation 25s linear infinite;
+  }
+
+  @keyframes dashAnimation {
+    to { stroke-dashoffset: -200; }
+  }
+</style>
+
+<div class="card">
+  <div class="card-head">
+    <h3><i class="fa-solid fa-ticket"></i> New Booking</h3>
+  </div>
+
+  <form method="POST" class="grid-form" id="booking-form">
+    <div class="form-group span-2">
+      <label>Select Train</label>
+      <select name="train_id" id="train-select" required>
+        <option value="">-- Choose a train --</option>
+        {% for t in trains %}
+        <option value="{{ t.id }}">
+          {{ t.train_number }} — {{ t.train_name }} ({{ t.source }} → {{ t.destination }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Passenger Name</label>
+      <input type="text" name="passenger_name" placeholder="Full name" required />
+    </div>
+    <div class="form-group">
+      <label>Age</label>
+      <input type="number" name="passenger_age" min="1" max="120" placeholder="Age" required />
+    </div>
+    <div class="form-group">
+      <label>Gender</label>
+      <select name="passenger_gender" required>
+        <option value="">Select</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Seats (1-6)</label>
+      <input type="number" name="seats_booked" id="seats" min="1" max="6" value="1" required />
+    </div>
+
+    <div class="train-info-box span-2" id="train-info" style="display:none;"></div>
+
+    <!-- 🗺️ ROUTE MAP -->
+    <div class="span-2" id="route-map-wrapper" style="display:none;">
+      <div style="background: white; border: 1px solid #e0e7ff; border-radius: 16px; padding: 22px; margin-bottom: 18px; box-shadow: 0 4px 20px rgba(79, 70, 229, 0.08);">
+        <div class="map-header">
+          <h3 class="map-title">
+            <i class="fa-solid fa-route"></i>
+            <span>Route Map</span>
+          </h3>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="route-stats-pill" id="distance-pill" style="display:none;">
+              <i class="fa-solid fa-road"></i>
+              <span id="distance-text"></span>
+            </span>
+            <span class="route-stats-pill" id="fare-pill" style="display:none; background: linear-gradient(135deg, #10b981, #059669);">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+              <span id="fare-text"></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 🎨 Color Legend -->
+        <div class="map-legend">
+          <div class="legend-item">
+            <span class="legend-dot legend-source"></span>
+            <span>Source (Start)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot legend-dest"></span>
+            <span>Destination (End)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-route"></span>
+            <span>Route</span>
+          </div>
+        </div>
+
+        <div id="route-map"></div>
+      </div>
+    </div>
+
+    <div class="form-actions span-2">
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-check"></i> Confirm Booking
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  console.log('🔍 Booking page loaded. Leaflet:', typeof L);
+
+  const CITIES = {
+    'Chennai': { lat: 13.0827, lng: 80.2707 },
+    'Mumbai': { lat: 19.0760, lng: 72.8777 },
+    'Delhi': { lat: 28.6139, lng: 77.2090 },
+    'New Delhi': { lat: 28.6139, lng: 77.2090 },
+    'Kolkata': { lat: 22.5726, lng: 88.3639 },
+    'Bangalore': { lat: 12.9716, lng: 77.5946 },
+    'Bengaluru': { lat: 12.9716, lng: 77.5946 },
+    'Hyderabad': { lat: 17.3850, lng: 78.4867 },
+    'Pune': { lat: 18.5204, lng: 73.8567 },
+    'Ahmedabad': { lat: 23.0225, lng: 72.5714 },
+    'Jaipur': { lat: 26.9124, lng: 75.7873 },
+    'Lucknow': { lat: 26.8467, lng: 80.9462 },
+    'Kochi': { lat: 9.9312, lng: 76.2673 },
+    'Coimbatore': { lat: 11.0168, lng: 76.9558 },
+    'Visakhapatnam': { lat: 17.6868, lng: 83.2185 },
+    'Bhopal': { lat: 23.2599, lng: 77.4126 },
+    'Nagpur': { lat: 21.1458, lng: 79.0882 },
+    'Patna': { lat: 25.5941, lng: 85.1376 },
+    'Guwahati': { lat: 26.1445, lng: 91.7362 },
+    'Madurai': { lat: 9.9252, lng: 78.1198 }
+  };
+
+  let routeMap = null;
+  let routeLayerGroup = null;
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371, toRad = x => x * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+  }
+
+  function drawRoute(source, destination, trainName, trainFare, departure, arrival, trainNumber) {
+    console.log('🚂 drawRoute:', source, '→', destination);
+
+    if (typeof L === 'undefined') {
+      console.error('❌ Leaflet not loaded!');
+      return;
+    }
+
+    if (!routeMap) {
+      routeMap = L.map('route-map', { zoomControl: true, scrollWheelZoom: true })
+        .setView([20.5937, 78.9629], 5);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap', maxZoom: 19
+      }).addTo(routeMap);
+
+      routeLayerGroup = L.layerGroup().addTo(routeMap);
+    }
+
+    routeLayerGroup.clearLayers();
+    document.getElementById('route-map-wrapper').style.display = 'block';
+    setTimeout(() => routeMap.invalidateSize(), 150);
+
+    const src = CITIES[source];
+    const dst = CITIES[destination];
+
+    if (!src || !dst) {
+      console.error('❌ City not found:', !src ? source : destination);
+      return;
+    }
+
+    // 🔵 SOURCE MARKER — BLUE
+    const srcIcon = L.divIcon({
+      html: '<div class="source-marker-icon"><div>🚆</div></div>',
+      iconSize: [54, 54],
+      iconAnchor: [27, 54],
+      className: ''
+    });
+
+    // 🟢 DESTINATION MARKER — GREEN
+    const dstIcon = L.divIcon({
+      html: '<div class="dest-marker-icon"><div>🎯</div></div>',
+      iconSize: [54, 54],
+      iconAnchor: [27, 54],
+      className: ''
+    });
+
+    // Source marker + popup (BLUE)
+    L.marker([src.lat, src.lng], { icon: srcIcon }).addTo(routeLayerGroup)
+      .bindPopup(`
+        <div class="map-popup">
+          <div class="map-popup-header popup-source">
+            <span style="font-size:18px;">🚆</span>
+            <span>${source}</span>
+            <span style="margin-left:auto;font-size:10px;background:rgba(255,255,255,.25);padding:3px 8px;border-radius:10px;">START</span>
+          </div>
+          <div class="map-popup-body">
+            <div class="map-popup-row">
+              <span class="map-popup-label">Train</span>
+              <span class="map-popup-value">${trainName}</span>
+            </div>
+            <div class="map-popup-row">
+              <span class="map-popup-label">Number</span>
+              <span class="map-popup-value">${trainNumber}</span>
+            </div>
+            <div class="map-popup-row">
+              <span class="map-popup-label">Departure</span>
+              <span class="map-popup-value">${departure}</span>
+            </div>
+          </div>
+        </div>
+      `);
+
+    // Destination marker + popup (GREEN)
+    L.marker([dst.lat, dst.lng], { icon: dstIcon }).addTo(routeLayerGroup)
+      .bindPopup(`
+        <div class="map-popup">
+          <div class="map-popup-header popup-dest">
+            <span style="font-size:18px;">🎯</span>
+            <span>${destination}</span>
+            <span style="margin-left:auto;font-size:10px;background:rgba(255,255,255,.25);padding:3px 8px;border-radius:10px;">END</span>
+          </div>
+          <div class="map-popup-body">
+            <div class="map-popup-row">
+              <span class="map-popup-label">Train</span>
+              <span class="map-popup-value">${trainName}</span>
+            </div>
+            <div class="map-popup-row">
+              <span class="map-popup-label">Number</span>
+              <span class="map-popup-value">${trainNumber}</span>
+            </div>
+            <div class="map-popup-row">
+              <span class="map-popup-label">Arrival</span>
+              <span class="map-popup-value">${arrival}</span>
+            </div>
+          </div>
+        </div>
+      `);
+
+    // 🌈 Gradient route line (Blue → Green)
+    const km = haversine(src.lat, src.lng, dst.lat, dst.lng);
+
+    // Glow layer
+    L.polyline([[src.lat, src.lng], [dst.lat, dst.lng]], {
+      color: '#c7d2fe', weight: 14, opacity: 0.35, lineCap: 'round'
+    }).addTo(routeLayerGroup);
+
+    // Segment 1 — Blue (source side)
+    L.polyline([[src.lat, src.lng], [dst.lat, dst.lng]], {
+      color: '#4f46e5', weight: 5, opacity: 0.9,
+      dashArray: '15, 10', lineCap: 'round'
+    }).addTo(routeLayerGroup);
+
+    // Gradient overlay — green tint (using gradient via SVG)
+    L.polyline([[src.lat, src.lng], [dst.lat, dst.lng]], {
+      color: '#10b981', weight: 5, opacity: 0.3,
+      dashArray: '15, 10', lineCap: 'round'
+    }).addTo(routeLayerGroup);
+
+    // Fit map
+    routeMap.fitBounds([[src.lat, src.lng], [dst.lat, dst.lng]], { padding: [80, 80] });
+
+    // Stats pills
+    document.getElementById('distance-pill').style.display = 'inline-flex';
+    document.getElementById('distance-text').textContent = km + ' km';
+    document.getElementById('fare-pill').style.display = 'inline-flex';
+    document.getElementById('fare-text').textContent = '₹' + trainFare;
+
+    console.log('✅ Route drawn:', km, 'km | Source:', source, '| Destination:', destination);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('train-select');
+    const seatsInput = document.getElementById('seats');
+    const info = document.getElementById('train-info');
+    if (!select) return;
+
+    async function loadTrainInfo() {
+      const id = select.value;
+      if (!id) {
+        info.style.display = 'none';
+        document.getElementById('route-map-wrapper').style.display = 'none';
+        return;
+      }
+      try {
+        const res = await fetch(`/api/train/${id}`);
+        const data = await res.json();
+        console.log('📦 API:', data);
+
+        const seats = parseInt(seatsInput.value) || 1;
+        const total = (data.fare * seats).toFixed(2);
+
+        info.style.display = 'flex';
+        info.innerHTML = `
+          <span><strong>Train:</strong> ${data.name} (${data.number})</span>
+          <span><strong>Route:</strong> ${data.source} → ${data.destination}</span>
+          <span><strong>Departure:</strong> ${data.departure}</span>
+          <span><strong>Arrival:</strong> ${data.arrival}</span>
+          <span><strong>Available:</strong> ${data.available_seats} seats</span>
+          <span><strong>Fare:</strong> ₹${data.fare}</span>
+          <span><strong>Total:</strong> <b style="color:#4f46e5;">₹${total}</b></span>
+        `;
+
+        drawRoute(data.source, data.destination, data.name, data.fare, data.departure, data.arrival, data.number);
+      } catch (e) {
+        console.error('❌ API error:', e);
+      }
+    }
+
+    select.addEventListener('change', loadTrainInfo);
+    if (seatsInput) seatsInput.addEventListener('input', loadTrainInfo);
+  });
+</script>
+
+{% endblock %}

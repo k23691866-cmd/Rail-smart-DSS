@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}PNR Status — RailSmart{% endblock %}
+{% block page_title %}PNR Status Check{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-head"><h3><i class="fa-solid fa-magnifying-glass"></i> Check PNR</h3></div>
+  <form method="POST" class="inline-form">
+    <input type="text" name="pnr" placeholder="Enter 10-digit PNR" required maxlength="10" pattern="\d{10}" />
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-search"></i> Search</button>
+  </form>
+
+  {% if booking %}
+  <div class="pnr-result">
+    <div class="pnr-header">
+      <h4>PNR: <code>{{ booking.pnr }}</code></h4>
+      <span class="badge badge-{{ 'success' if booking.status=='CONFIRMED' else 'danger' }}">{{ booking.status }}</span>
+    </div>
+    <div class="pnr-grid">
+      <div><label>Train</label><p>{{ booking.train.train_name }} ({{ booking.train.train_number }})</p></div>
+      <div><label>Route</label><p>{{ booking.train.source }} → {{ booking.train.destination }}</p></div>
+      <div><label>Departure</label><p>{{ booking.train.departure_time }}</p></div>
+      <div><label>Arrival</label><p>{{ booking.train.arrival_time }}</p></div>
+      <div><label>Passenger</label><p>{{ booking.passenger_name }}, {{ booking.passenger_age }} yrs</p></div>
+      <div><label>Seats</label><p>{{ booking.seats_booked }}</p></div>
+      <div><label>Total Fare</label><p>₹{{ booking.total_fare }}</p></div>
+      <div><label>Booked On</label><p>{{ booking.booking_date.strftime('%d %b %Y, %I:%M %p') }}</p></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

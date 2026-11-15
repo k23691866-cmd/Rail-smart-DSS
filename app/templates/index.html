@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div class="landing">
+  <nav class="landing-nav">
+    <div class="brand"><i class="fa-solid fa-train-subway"></i> RailSmart DSS</div>
+    <div>
+      <a href="{{ url_for('main.login') }}" class="btn btn-ghost">Login</a>
+      <a href="{{ url_for('main.register') }}" class="btn btn-primary">Get Started</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>Smart Railway Decision<br><span class="gradient-text">Support System</span></h1>
+    <p>Book tickets, track PNRs, manage bookings, and get intelligent insights — all in one powerful platform.</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-lg">Create Account</a>
+      <a href="{{ url_for('main.login') }}" class="btn btn-outline btn-lg">Sign In</a>
+    </div>
+  </section>
+
+  <section class="featured">
+    <h2>Popular Trains</h2>
+    <div class="train-grid">
+      {% for t in trains %}
+      <div class="train-card">
+        <div class="train-head">
+          <span class="train-num">{{ t.train_number }}</span>
+          <span class="badge badge-success">₹{{ t.fare|int }}</span>
+        </div>
+        <h3>{{ t.train_name }}</h3>
+        <div class="train-route">
+          <span>{{ t.source }}</span>
+          <i class="fa-solid fa-arrow-right"></i>
+          <span>{{ t.destination }}</span>
+        </div>
+        <div class="train-meta">
+          <span><i class="fa-regular fa-clock"></i> {{ t.departure_time }}</span>
+          <span><i class="fa-solid fa-chair"></i> {{ t.available_seats }} seats</span>
+        </div>
+      </div>
+      {% else %}
+      <p class="empty">No trains yet. Admin will add them soon.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <p>© 2024 RailSmart DSS — All rights reserved.</p>
+  </footer>
+</div>
+{% endblock %}

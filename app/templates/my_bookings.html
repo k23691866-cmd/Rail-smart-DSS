@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}My Bookings — RailSmart{% endblock %}
+{% block page_title %}My Bookings{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-head">
+    <h3><i class="fa-solid fa-list-check"></i> All Bookings</h3>
+    <a href="{{ url_for('main.booking') }}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus"></i> New Booking
+    </a>
+  </div>
+
+  {% if bookings %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>PNR</th>
+          <th>Train</th>
+          <th>Route</th>
+          <th>Passenger</th>
+          <th>Seats</th>
+          <th>Fare</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td><code>{{ b.pnr }}</code></td>
+          <td>
+            {{ b.train.train_name }}
+            <br><small style="color:#94a3b8;">{{ b.train.train_number }}</small>
+          </td>
+          <td>{{ b.train.source }} → {{ b.train.destination }}</td>
+          <td>
+            {{ b.passenger_name }}
+            <br><small style="color:#94a3b8;">{{ b.passenger_age }} yrs, {{ b.passenger_gender }}</small>
+          </td>
+          <td>{{ b.seats_booked }}</td>
+          <td>₹{{ b.total_fare }}</td>
+          <td>
+            <span class="badge badge-{{ 'success' if b.status == 'CONFIRMED' else 'danger' }}">
+              {{ b.status }}
+            </span>
+          </td>
+          <td>
+            {% if b.status == 'CONFIRMED' %}
+            <form method="POST"
+                  action="{{ url_for('main.cancel_ticket', booking_id=b.id) }}"
+                  onsubmit="return confirm('Cancel PNR {{ b.pnr }}? 20% cancellation charge will apply.');">
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="fa-solid fa-xmark"></i> Cancel
+              </button>
+            </form>
+            {% else %}
+            <span style="color:#94a3b8; font-size:12px;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-ticket-simple"></i>
+    <p>No bookings found.</p>
+    <a href="{{ url_for('main.booking') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Book Your First Trip
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
